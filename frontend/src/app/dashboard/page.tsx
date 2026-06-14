@@ -130,7 +130,7 @@ export default function Dashboard() {
                   <div>
                     <p className="text-slate-200 font-medium group-hover:text-cyan-300 transition-colors">{item.filename || "Resume.pdf"}</p>
                     <p className="text-sm text-slate-400">
-                      {new Date(item.createdAt).toLocaleDateString()}
+                      {new Date(item.createdAt).toLocaleString()}
                     </p>
                   </div>
                 </div>

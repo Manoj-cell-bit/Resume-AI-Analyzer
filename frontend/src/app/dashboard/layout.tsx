@@ -59,7 +59,7 @@ export default function DashboardLayout({
     { name: "Settings", href: "/dashboard/settings", icon: Settings },
   ];
 
-  if (userRole === "ADMIN") {
+  if (userRole === "ADMIN" || userRole === "MASTER_ADMIN") {
     navItems.splice(4, 0, { name: "Admin", href: "/dashboard/admin", icon: Users });
   }
 

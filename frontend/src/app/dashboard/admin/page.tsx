@@ -80,7 +80,12 @@ export default function AdminDashboard() {
   };
 
   const handleToggleRole = async (user: AdminUserStats) => {
-    const newRole = user.role === 'ADMIN' ? 'USER' : 'ADMIN';
+    // Determine next logical role based on current role
+    // USER -> ADMIN -> MASTER_ADMIN -> USER
+    let newRole = 'USER';
+    if (user.role === 'USER') newRole = 'ADMIN';
+    else if (user.role === 'ADMIN') newRole = 'MASTER_ADMIN';
+    
     if (!confirm(`Are you sure you want to change ${user.firstName}'s role to ${newRole}?`)) return;
 
     setActionLoadingId(user.id);
@@ -240,10 +245,10 @@ export default function AdminDashboard() {
                       </span>
                     </td>
                     <td className="p-4 text-sm text-slate-400">
-                      {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
+                      {user.createdAt ? new Date(user.createdAt).toLocaleString() : 'N/A'}
                     </td>
                     <td className="p-4 text-sm text-slate-400">
-                      {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'Never'}
+                      {user.lastLogin ? new Date(user.lastLogin).toLocaleString() : 'Never'}
                     </td>
                     <td className="p-4 font-medium text-cyan-400/80">
                       {user.totalResumesAnalyzed}
@@ -268,14 +273,16 @@ export default function AdminDashboard() {
                             <button 
                               onClick={() => handleToggleRole(user)}
                               disabled={actionLoadingId === user.id}
-                              title={user.role === 'ADMIN' ? "Revoke Admin" : "Make Admin"}
+                              title={user.role === 'MASTER_ADMIN' ? "Revoke Role" : "Upgrade Role"}
                               className={`p-2 rounded-lg transition-all ${
-                                user.role === 'ADMIN' 
+                                user.role === 'MASTER_ADMIN' 
+                                  ? 'hover:bg-cyan-500/20 text-cyan-500 hover:shadow-[0_0_10px_rgba(0,240,255,0.2)]'
+                                  : user.role === 'ADMIN' 
                                   ? 'hover:bg-amber-500/20 text-amber-500 hover:shadow-[0_0_10px_rgba(245,158,11,0.2)]' 
                                   : 'hover:bg-purple-500/20 text-purple-400 hover:shadow-[0_0_10px_rgba(176,38,255,0.2)]'
                               } disabled:opacity-50`}
                             >
-                              {user.role === 'ADMIN' ? <ShieldAlert className="w-5 h-5" /> : <ShieldCheck className="w-5 h-5" />}
+                              {user.role === 'MASTER_ADMIN' ? <ShieldCheck className="w-5 h-5 text-cyan-400" /> : user.role === 'ADMIN' ? <ShieldAlert className="w-5 h-5" /> : <ShieldCheck className="w-5 h-5" />}
                             </button>
                             <button 
                               onClick={() => handleDeleteUser(user.id)}
