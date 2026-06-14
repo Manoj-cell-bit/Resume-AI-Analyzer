@@ -8,6 +8,7 @@ export default function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
   const [saveError, setSaveError] = useState("");
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
 
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [passwordData, setPasswordData] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
@@ -53,6 +54,7 @@ export default function SettingsPage() {
 
       if (res.ok) {
         setSaveMessage("Profile updated successfully!");
+        setIsEditingProfile(false);
         setTimeout(() => setSaveMessage(""), 3000);
       } else {
         setSaveError("Failed to update profile.");
@@ -134,18 +136,20 @@ export default function SettingsPage() {
                 <label className="text-sm font-medium text-slate-400">First Name</label>
                 <input 
                   type="text" 
+                  disabled={!isEditingProfile}
                   value={profile.firstName}
                   onChange={(e) => setProfile({...profile, firstName: e.target.value})}
-                  className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-slate-200 focus:outline-none focus:border-blue-500 transition-colors"
+                  className={`w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-slate-200 focus:outline-none focus:border-blue-500 transition-colors ${!isEditingProfile ? 'opacity-70 cursor-not-allowed' : ''}`}
                 />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-400">Last Name</label>
                 <input 
                   type="text" 
+                  disabled={!isEditingProfile}
                   value={profile.lastName}
                   onChange={(e) => setProfile({...profile, lastName: e.target.value})}
-                  className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-slate-200 focus:outline-none focus:border-blue-500 transition-colors"
+                  className={`w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-slate-200 focus:outline-none focus:border-blue-500 transition-colors ${!isEditingProfile ? 'opacity-70 cursor-not-allowed' : ''}`}
                 />
               </div>
             </div>
@@ -163,14 +167,35 @@ export default function SettingsPage() {
             </div>
             
             <div className="flex items-center gap-4">
-              <button 
-                onClick={handleProfileUpdate}
-                disabled={isSaving}
-                className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
-                Save Changes
-              </button>
+              {!isEditingProfile ? (
+                <button 
+                  onClick={() => setIsEditingProfile(true)}
+                  className="px-6 py-2 bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 rounded-lg font-medium transition-colors"
+                >
+                  Edit Profile
+                </button>
+              ) : (
+                <>
+                  <button 
+                    onClick={handleProfileUpdate}
+                    disabled={isSaving}
+                    className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
+                    Save Changes
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setIsEditingProfile(false);
+                      setSaveError("");
+                      setSaveMessage("");
+                    }}
+                    className="px-4 py-2 text-slate-400 hover:text-slate-300 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </>
+              )}
               {saveMessage && <span className="flex items-center gap-1 text-sm text-green-400"><CheckCircle className="w-4 h-4"/> {saveMessage}</span>}
               {saveError && <span className="flex items-center gap-1 text-sm text-red-400"><AlertCircle className="w-4 h-4"/> {saveError}</span>}
             </div>
