@@ -298,13 +298,13 @@ public class AiAnalysisService {
 
     public String optimizeResume(String rawText) {
         String prompt = "You are an expert resume writer and ATS optimization specialist. " +
-            "Your task is to completely rewrite the following resume to achieve a 95+ ATS score. " +
+            "Your task is to optimize the following resume to achieve a 95+ ATS score WITHOUT adding any fabricated information or unnecessary fluff. " +
             "Follow these STRICT rules:\n" +
-            "1. Use clear, professional formatting with standard section headers (Professional Summary, Experience, Education, Skills, Projects).\n" +
-            "2. Ensure all bullet points under Experience and Projects are impactful, metrics-driven, and start with strong action verbs. Quantify achievements where possible (e.g., 'improved by X%'). If original metrics are missing, use plausible placeholders like [Metric] or refine the phrasing to sound highly impactful.\n" +
-            "3. Organize skills logically into categories.\n" +
-            "4. Correct any grammatical or structural errors.\n" +
-            "5. Return the newly generated resume formatted cleanly in Markdown.\n\n" +
+            "1. STRICT FACTUALITY: Keep the original facts, skills, and experiences exactly as they are. DO NOT add any new skills, jobs, or degrees. DO NOT add placeholders like [Metric].\n" +
+            "2. Improve the grammar, phrasing, and impact of the existing bullet points using strong action verbs.\n" +
+            "3. Organize skills logically into categories based ONLY on what is in the original text.\n" +
+            "4. Use clear, professional formatting with standard section headers (Professional Summary, Experience, Education, Skills, Projects).\n" +
+            "5. Return the optimized resume cleanly formatted in Markdown.\n\n" +
             "Original Resume Text:\n" + rawText;
 
         com.google.genai.types.GenerateContentConfig optimizeConfig = com.google.genai.types.GenerateContentConfig.builder()
