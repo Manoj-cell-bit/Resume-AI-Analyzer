@@ -4,6 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { CheckCircle, AlertCircle, ArrowLeft, FileText, Download } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import ReactMarkdown from "react-markdown";
 
 export default function ResumeDetailsPage() {
   const params = useParams();
@@ -11,6 +12,41 @@ export default function ResumeDetailsPage() {
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [optimizing, setOptimizing] = useState(false);
+
+  const handleOptimize = async () => {
+    try {
+      setOptimizing(true);
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/resumes/${params.id}/optimize`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(errorText || "Failed to optimize");
+      }
+      const data = await res.json();
+      setResult((prev: any) => ({ ...prev, optimizedResume: data.optimizedResume }));
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setOptimizing(false);
+    }
+  };
+
+  const handleDownload = () => {
+    if (!result.optimizedResume) return;
+    const blob = new Blob([result.optimizedResume], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `optimized-resume-${result.filename || 'download'}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   useEffect(() => {
     const fetchDetails = async () => {
@@ -117,6 +153,49 @@ export default function ResumeDetailsPage() {
             </div>
             <p className="text-slate-300 leading-relaxed">{result.summary}</p>
           </div>
+        </div>
+
+        {/* Optimized Resume Section */}
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl mt-6">
+          <div className="flex justify-between items-center mb-6 border-b border-slate-800 pb-4">
+            <h3 className="text-2xl font-bold text-slate-100 flex items-center gap-2">
+              <FileText className="text-teal-500 w-6 h-6" />
+              ATS-Optimized Resume
+            </h3>
+            {result.optimizedResume && (
+              <button onClick={handleDownload} className="flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-500 text-white rounded-lg transition-colors">
+                <Download size={16} />
+                Download Markdown
+              </button>
+            )}
+          </div>
+          
+          {!result.optimizedResume ? (
+            <div className="text-center py-8">
+              <p className="text-slate-400 mb-6">Generate an AI-rewritten, highly optimized version of this resume tailored for Applicant Tracking Systems.</p>
+              <button 
+                onClick={handleOptimize} 
+                disabled={optimizing}
+                className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-600/50 text-white font-medium rounded-xl transition-colors inline-flex items-center gap-2"
+              >
+                {optimizing ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <FileText size={18} />
+                    Generate Optimized Resume
+                  </>
+                )}
+              </button>
+            </div>
+          ) : (
+            <div className="prose prose-invert max-w-none bg-slate-950 p-6 rounded-xl border border-slate-800">
+              <ReactMarkdown>{result.optimizedResume}</ReactMarkdown>
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
