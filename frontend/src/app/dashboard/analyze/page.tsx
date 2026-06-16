@@ -1,7 +1,8 @@
 "use client";
 import { useState, useRef } from "react";
-import { UploadCloud, FileText, CheckCircle, AlertCircle, X, Loader2 } from "lucide-react";
+import { UploadCloud, FileText, CheckCircle, AlertCircle, X, Loader2, Download } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import ReactMarkdown from "react-markdown";
 
 export default function AnalyzePage() {
   const [file, setFile] = useState<File | null>(null);
@@ -9,7 +10,56 @@ export default function AnalyzePage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState("");
+  const [optimizing, setOptimizing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleOptimize = async () => {
+    try {
+      setOptimizing(true);
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/resumes/${result.id}/optimize`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(errorText || "Failed to optimize");
+      }
+      const data = await res.json();
+      setResult((prev: any) => ({ ...prev, optimizedResume: data.optimizedResume }));
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setOptimizing(false);
+    }
+  };
+
+  const handleDownloadPDF = () => {
+    window.print();
+  };
+
+  const handleDownloadDOCX = () => {
+    if (!result.optimizedResume) return;
+    const element = document.getElementById("print-resume-content");
+    if (!element) return;
+    
+    const header = "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>Resume</title></head><body>";
+    const footer = "</body></html>";
+    const sourceHTML = header + element.innerHTML + footer;
+    
+    const blob = new Blob(['\ufeff', sourceHTML], {
+        type: 'application/msword'
+    });
+    
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `optimized-resume-${result.filename || 'download'}.doc`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -74,7 +124,8 @@ export default function AnalyzePage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <>
+    <div className="no-print max-w-4xl mx-auto space-y-8">
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -218,6 +269,56 @@ export default function AnalyzePage() {
                 <p className="text-slate-300 leading-relaxed">{result.summary}</p>
               </div>
             </div>
+
+            {/* Optimized Resume Section */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl mt-6">
+              <div className="flex justify-between items-center mb-6 border-b border-slate-800 pb-4">
+                <h3 className="text-2xl font-bold text-slate-100 flex items-center gap-2">
+                  <FileText className="text-teal-500 w-6 h-6" />
+                  ATS-Optimized Resume
+                </h3>
+                {result.optimizedResume && (
+                  <div className="flex gap-2">
+                    <button onClick={handleDownloadPDF} className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors">
+                      <Download size={16} />
+                      Download PDF
+                    </button>
+                    <button onClick={handleDownloadDOCX} className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors">
+                      <Download size={16} />
+                      Download DOC
+                    </button>
+                  </div>
+                )}
+              </div>
+              
+              {!result.optimizedResume ? (
+                <div className="text-center py-8">
+                  <p className="text-slate-400 mb-6">Generate an AI-rewritten, highly optimized version of this resume tailored for Applicant Tracking Systems.</p>
+                  <button 
+                    onClick={handleOptimize} 
+                    disabled={optimizing}
+                    className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-600/50 text-white font-medium rounded-xl transition-colors inline-flex items-center gap-2"
+                  >
+                    {optimizing ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <FileText size={18} />
+                        Generate Optimized Resume
+                      </>
+                    )}
+                  </button>
+                </div>
+              ) : (
+                <div className="prose prose-invert max-w-none bg-slate-950 p-6 rounded-xl border border-slate-800 text-left">
+                  <ReactMarkdown>{result.optimizedResume}</ReactMarkdown>
+                </div>
+              )}
+            </div>
+
             <button 
               onClick={removeFile}
               className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm transition-all"
@@ -415,5 +516,11 @@ export default function AnalyzePage() {
         </AnimatePresence>
       )}
     </div>
+
+    {/* Hidden element strictly for PDF and DOC printing */}
+    <div id="print-resume-content" className="print-only hidden prose prose-black max-w-none p-8 bg-white text-black">
+      {result?.optimizedResume && <ReactMarkdown>{result.optimizedResume}</ReactMarkdown>}
+    </div>
+    </>
   );
 }
