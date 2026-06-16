@@ -26,6 +26,12 @@ public class ResumeAnalysis {
     @Column(columnDefinition = "TEXT")
     private String summary;
 
+    @Column(columnDefinition = "TEXT")
+    private String rawText;
+
+    @Column(columnDefinition = "TEXT")
+    private String optimizedResume;
+
     @ElementCollection
     @CollectionTable(name = "resume_strengths", joinColumns = @JoinColumn(name = "analysis_id"))
     @Column(name = "strength", columnDefinition = "TEXT")
@@ -144,4 +150,10 @@ public class ResumeAnalysis {
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public String getRawText() { return rawText; }
+    public void setRawText(String rawText) { this.rawText = rawText; }
+
+    public String getOptimizedResume() { return optimizedResume; }
+    public void setOptimizedResume(String optimizedResume) { this.optimizedResume = optimizedResume; }
 }
